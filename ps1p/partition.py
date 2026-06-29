@@ -9,6 +9,7 @@ from typing import Optional
 PARTITION_MAGIC = 0x00ABCDEF
 VA_CODE_BASE = 0x28B00000
 VA_DATA_BASE = 0x28A80000
+MAX_PARTITION_COUNT = 256  # 32 bytes * 256 = 8KB max for firmware partition tables
 
 
 @dataclass
@@ -28,7 +29,7 @@ class PartitionEntry:
     def is_code(self) -> bool:
         """Check if this entry references code region."""
         va = self.first_va
-        return va is not None and (va & 0xFFFF0000) in (0x28B00000, 0x28A00000)
+        return va is not None and (va & 0xFFFF0000) in (0x28B00000, 0x28A80000)
     
     def __repr__(self) -> str:
         flds = ', '.join(f'0x{f:08x}' if f > 0xFFFF else str(f) for f in self.fields[:6])
@@ -55,6 +56,8 @@ class PartitionTable:
             return None
         
         count = header[1]
+        # Safety cap to prevent DoS from maliciously large count values
+        count = min(count, MAX_PARTITION_COUNT)
         entries = []
         
         for i in range(count):
@@ -67,11 +70,6 @@ class PartitionTable:
                 fields=fields,
                 offset_in_table=base_offset + off,
             ))
-        
-        extra_header_fields = []
-        if count > 0:
-            # Parse remaining header fields after count
-            pass
         
         return cls(
             count=count,
