@@ -45,6 +45,10 @@ class OpcodeAnalyzer:
         self.code = self._raw[CODE_START:CODE_END]
         self.code_size = len(self.code)
 
+        # Result caches (populated on first call)
+        self._cached_hw_freq: dict | None = None
+        self._cached_op4_freq: dict | None = None
+
     # ------------------------------------------------------------------
     # Statistics helpers
     # ------------------------------------------------------------------
@@ -93,15 +97,20 @@ class OpcodeAnalyzer:
         """Count all 16-bit halfword occurrences in ipu_code.
         Returns {halfword: count} sorted by count descending.
         """
+        if self._cached_hw_freq is not None:
+            return self._cached_hw_freq
         freq = Counter()
         for hw in self._halfwords():
             freq[hw] += 1
-        return dict(freq.most_common())
+        self._cached_hw_freq = dict(freq.most_common())
+        return self._cached_hw_freq
 
     def compute_op4_frequencies(self) -> dict:
         """Group by op4 (high nibble) and sub4 (second nibble).
         Returns {op4: {sub4: count, ...}, ...}
         """
+        if self._cached_op4_freq is not None:
+            return self._cached_op4_freq
         op4_counts = Counter()
         op4_sub4: dict[int, Counter] = defaultdict(Counter)
 
@@ -122,6 +131,7 @@ class OpcodeAnalyzer:
                 'count': cnt,
                 'subcodes': subs,
             }
+        self._cached_op4_freq = result
         return result
 
     def _find_all_hi_nop_entries(self) -> list[dict]:
@@ -137,15 +147,8 @@ class OpcodeAnalyzer:
                 file_off = self._file_offset(i)
                 entries.append({'offset': file_off, 'target': lo})
 
-        # De-duplicate by offset
-        seen: set[int] = set()
-        unique: list[dict] = []
-        for e in entries:
-            if e['offset'] not in seen:
-                seen.add(e['offset'])
-                unique.append(e)
-        unique.sort(key=lambda x: x['offset'])
-        return unique
+        entries.sort(key=lambda x: x['offset'])
+        return entries
 
     def find_jump_table_entries(self) -> list[dict]:
         """Find jump tables using clustering: 3+ contiguous words with
