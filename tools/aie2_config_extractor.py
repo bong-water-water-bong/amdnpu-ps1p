@@ -74,10 +74,12 @@ def _hex(data: bytes, max_len: int = 16) -> str:
 
 
 def _control_opcodes(data: bytes, search_limit: int = 256) -> list[int]:
-    """Extract leading byte values at 4-aligned offsets within *data*.
+    """Extract candidate control opcodes at 4-aligned offsets.
 
     AIE2 control packets typically start with opcode bytes 0x01, 0x02,
-    or 0x03 at 4-byte aligned boundaries.
+    or 0x03 at 4-byte aligned boundaries.  Returns only byte values
+    that are valid opcode candidates (0x01-0x1f) to avoid noise from
+    data fields that happen to fall at aligned positions.
 
     Parameters
     ----------
@@ -89,12 +91,14 @@ def _control_opcodes(data: bytes, search_limit: int = 256) -> list[int]:
     Returns
     -------
     list[int]
-        Byte values found at 4-aligned positions.
+        Candidate opcode byte values found at 4-aligned positions.
     """
     opcodes: list[int] = []
     limit = min(search_limit, len(data))
     for i in range(0, limit, 4):
-        opcodes.append(data[i])
+        b = data[i]
+        if 0x01 <= b <= 0x1f:
+            opcodes.append(b)
     return opcodes
 
 
@@ -247,12 +251,12 @@ class Aie2ConfigExtractor:
         return sorted(data_table_blobs, key=lambda x: x["offset"])
 
     def find_aligned_structures(self, alignment: int = 64) -> list[dict]:
-        """Find non-zero 64-byte aligned blocks in the data region.
+        """Find non-zero *alignment*-byte aligned blocks in the data region.
 
         The AIE2 configuration data appears to be organized in
-        64-byte aligned blocks.  Returns only blocks that are
-        entirely within the ``data_table`` region and have at least
-        one non-zero byte.
+        64-byte aligned blocks.  Uses dynamically detected region
+        boundaries from ``_find_data_region_start_end()`` to avoid
+        scanning the padding and sparse regions.
 
         Parameters
         ----------
@@ -274,9 +278,11 @@ class Aie2ConfigExtractor:
         data = self._data
         results: list[dict] = []
 
-        # Align start to the nearest alignment boundary >= _DATA_TABLE_START
-        start = ((_DATA_TABLE_START + alignment - 1) // alignment) * alignment
-        end = _DATA_TABLE_END
+        data_start, data_end = _find_data_region_start_end(data)
+
+        # Align start to the nearest alignment boundary
+        start = ((data_start + alignment - 1) // alignment) * alignment
+        end = data_end
         block_index = 0
 
         for offset in range(start, end, alignment):
@@ -386,16 +392,18 @@ class Aie2ConfigExtractor:
         - ``data_region_end`` — offset where non-zero data ends
         """
         total_size = len(self._data)
-        sync_words = self.find_xilinx_sync_words()
-        blobs = self.find_data_table_blobs()
-        aligned = self.find_aligned_structures()
         data_start, data_end = _find_data_region_start_end(self._data)
+
+        # Cache inner results so CLI doesn't recompute
+        self._sync_words = self.find_xilinx_sync_words()
+        self._data_blobs = self.find_data_table_blobs()
+        self._aligned = self.find_aligned_structures()
 
         return {
             "total_size": total_size,
-            "num_xilinx_sync_words": len(sync_words),
-            "num_data_table_blobs": len(blobs),
-            "num_aligned_structures": len(aligned),
+            "num_xilinx_sync_words": len(self._sync_words),
+            "num_data_table_blobs": len(self._data_blobs),
+            "num_aligned_structures": len(self._aligned),
             "data_region_start": data_start,
             "data_region_end": data_end,
         }
@@ -471,9 +479,10 @@ def _run_cli(args: list[str] | None = None) -> int:
         return 0
 
     # ── Normal mode ───────────────────────────────────────────
-    sync_words = extractor.find_xilinx_sync_words()
-    data_blobs = extractor.find_data_table_blobs()
-    aligned = extractor.find_aligned_structures()
+    # Use cached results from summarize() call above
+    sync_words = getattr(extractor, '_sync_words', extractor.find_xilinx_sync_words())
+    data_blobs = getattr(extractor, '_data_blobs', extractor.find_data_table_blobs())
+    aligned = getattr(extractor, '_aligned', extractor.find_aligned_structures())
     profile = extractor.compute_entropy_profile()
 
     print(f"AIE2 Configuration Analysis: {opts.firmware}")
