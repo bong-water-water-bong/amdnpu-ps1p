@@ -1,12 +1,11 @@
 """PS1p container model — read, extract, write firmware containers."""
 
 from __future__ import annotations
-import struct
 import hashlib
 import math
 import os
 from dataclasses import dataclass, field
-from typing import Optional, Iterator, BinaryIO
+from typing import Optional
 
 from ps1p.header import parse_header, PS1pHeader
 
@@ -150,13 +149,20 @@ class PS1pContainer:
         return summary
 
     def patch(self, offset: int, new_data: bytes) -> PS1pContainer:
-        """Create a new container with patched bytes at offset."""
+        """Create a new container with patched bytes at offset.
+
+        Re-parses the header from the patched data so the returned
+        container is internally consistent.
+        """
         patched = bytearray(self.raw_data)
         patched[offset:offset + len(new_data)] = new_data
+        patched_bytes = bytes(patched)
+        header = parse_header(patched_bytes)
+        section_map = SECTION_MAP_NEW if not header.is_old else SECTION_MAP_OLD
         return PS1pContainer(
-            header=self.header,
-            raw_data=bytes(patched),
-            section_map=self.section_map,
+            header=header,
+            raw_data=patched_bytes,
+            section_map=section_map,
         )
 
     def get_partition_table(self) -> Optional[list[dict]]:
