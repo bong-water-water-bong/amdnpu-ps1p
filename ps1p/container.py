@@ -42,7 +42,8 @@ def entropy(data: bytes) -> float:
     for b in data:
         counts[b] += 1
     total = len(data)
-    return -sum((c / total) * math.log2(c / total) for c in counts if c > 0)
+    result = -sum((c / total) * math.log2(c / total) for c in counts if c > 0)
+    return max(0.0, result)  # Clamp -0.0 to 0.0
 
 
 @dataclass
