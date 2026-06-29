@@ -7,7 +7,7 @@ binary content types within $PS1p firmware sections.
 from __future__ import annotations
 import math
 import struct
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
 
 
@@ -18,7 +18,6 @@ THUMB_PROLOGUES = {
     0xb570: 'PUSH {R4-R6,LR}',
     0xb530: 'PUSH {R4-R5,LR}',
     0xb5f0: 'PUSH {R4-R7,LR}',
-    0xe92d: 'STMDB SP! (ARM)',
 }
 
 # Xilinx bitstream sync word
@@ -172,6 +171,19 @@ class BlobAnalyzer:
         if current_start is not None and (len(data) - current_start) > min_size:
             blob_data = data[current_start:]
             blobs.append(BlobAnalyzer.analyze(blob_data, current_start))
+        elif current_start is None:
+            # Check for binary blob at the very end that wasn't caught
+            # by the loop (e.g., data shorter than window, or window stride
+            # missed the last few bytes)
+            last_start = max(0, len(data) - min_size)
+            for i in range(last_start, len(data) - 64 + 1, stride):
+                chunk = data[i:i + 64]
+                ascii_bytes = sum(1 for b in chunk if 32 <= b < 127)
+                if ascii_bytes < threshold:
+                    blob_data = data[i:]
+                    if len(blob_data) > min_size:
+                        blobs.append(BlobAnalyzer.analyze(blob_data, i))
+                    break
 
         return sorted(blobs, key=lambda b: -b.size)
 

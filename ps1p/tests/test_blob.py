@@ -2,7 +2,7 @@
 
 import struct
 
-from ps1p.blob import BlobAnalyzer, BlobAnalysis, THUMB_PROLOGUES, XILINX_SYNC
+from ps1p.blob import BlobAnalyzer, BlobAnalysis, XILINX_SYNC
 
 
 def test_analyze_empty():
@@ -59,6 +59,7 @@ def test_xilinx_bitstream():
     data = b'\xaa\x99' + b'\x00' * 30 + b'\xaa\x99'
     result = BlobAnalyzer.analyze(data)
     assert result.has_xilinx_sync is True
+    assert result.classification == 'xilinx_bitstream'
 
 
 def test_elf_detection():
