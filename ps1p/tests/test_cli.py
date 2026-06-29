@@ -3,13 +3,11 @@
 from __future__ import annotations
 
 import os
-import sys
 import tempfile
-from io import StringIO
 
 import pytest
 
-from ps1p.cli import main, build_parser
+from ps1p.cli import main
 
 
 def test_cli_help():
@@ -54,6 +52,25 @@ def test_cli_dump_blobs(new_container):
     exit_code = main(["dump", new_container.path, "sub_payload",
                        "--blobs", "--min-blob-size", "32", "-v"])
     assert exit_code == 0
+
+
+def test_cli_repack(new_container):
+    """ps1p repack creates a patched copy of the container."""
+    # Create a small patch file
+    with tempfile.NamedTemporaryFile(suffix='.bin', delete=False) as f:
+        f.write(b'\x00' * 16)
+        patch_file = f.name
+    try:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output = os.path.join(tmpdir, 'patched.sbin')
+            exit_code = main(["repack", new_container.path,
+                               "-o", output,
+                               "--replace", f"0x10,{patch_file}"])
+            assert exit_code == 0
+            assert os.path.exists(output)
+            assert os.path.getsize(output) == os.path.getsize(new_container.path)
+    finally:
+        os.unlink(patch_file)
 
 
 # ── Fixtures ──────────────────────────────────────────────────────────────
