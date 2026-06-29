@@ -1,0 +1,43 @@
+[pr_description]
+extra_instructions = """
+Focus on:
+1. What the change does to firmware parsing — new sections, fields, edge cases
+2. Binary format correctness — endianness, offset math, size boundaries
+3. Backward compatibility — new firmware vs old firmware (v1.0.0.166 vs v1.1.2.65)
+4. Breaking CLI or API changes — Python public interface changes
+Use bullet points. Keep it under 250 words.
+"""
+
+[pr_reviewer]
+extra_instructions = """
+Prioritize:
+1. Binary parsing correctness — buffer overflows, signed/unsigned issues, hardcoded offsets
+2. Edge cases — truncated firmware, zero-length sections, missing magic bytes, malformed headers
+3. Cross-version compatibility — both firmware variants (old boot fw + new runtime fw) handled
+4. Error handling — what happens on parse failure? Graceful degradation or crash?
+5. Test coverage — both old and new firmware fixtures exercised?
+6. Performance — scanning entire 429KB firmware multiple times, unnecessary copies
+
+Flag as critical:
+- Indexing past end of buffer without bounds check
+- Hardcoded offsets that don't work across firmware versions
+- Unchecked assumptions about section ordering or presence
+
+Ignore minor style nits (naming, formatting) unless they obscure intent.
+"""
+
+[pr_code_suggestions]
+extra_instructions = """
+Suggestions should be actionable and specific. Avoid generic advice.
+Prefer concrete rewrites over abstract critiques.
+"""
+
+[pr_questions]
+enabled = true
+
+[config]
+verbosity_level = 1
+model = "openai/mlx-community/Qwen3-8B-4bit"
+model_params = { api_base = "http://127.0.0.1:18080/v1" }
+fallback_models = "openai/glm-5.2"
+custom_model_max_tokens = 64000

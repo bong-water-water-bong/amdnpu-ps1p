@@ -12,6 +12,11 @@
  *
  * Run:
  *   LD_LIBRARY_PATH=/opt/xilinx/xrt/lib64 ./npu_xrt_test
+ *
+ * Note:
+ *   An xclbin file must be available on the system.  The default search
+ *   path can be overridden via the XCLBIN_PATH environment variable.
+ *   If no xclbin is found the test prints an error and exits gracefully.
  */
 
 #include <iostream>
@@ -133,9 +138,26 @@ int main(int argc, char** argv) {
         std::cout << "Device: " << dev.get_info<xrt::info::device::name>() << " ("
                   << dev.get_info<xrt::info::device::bdf>() << ")" << std::endl;
         
-        // Determine xclbin path
-        std::string xclbin_path = "/tmp/xdna-driver/src/shim_ve2/Runner/latency/validate.xclbin";
-        
+        // Determine xclbin path: use XCLBIN_PATH env var if set, else default
+        const char* env_path = std::getenv("XCLBIN_PATH");
+        std::string xclbin_path;
+        if (env_path && env_path[0] != '\0') {
+            xclbin_path = env_path;
+        } else {
+            xclbin_path = "/tmp/xdna-driver/src/shim_ve2/Runner/latency/validate.xclbin";
+        }
+
+        // Check if xclbin file exists
+        {
+            FILE* f = fopen(xclbin_path.c_str(), "r");
+            if (!f) {
+                std::cerr << "xclbin file not found: " << xclbin_path << std::endl;
+                std::cerr << "Set XCLBIN_PATH environment variable to point to a valid xclbin." << std::endl;
+                return 1;
+            }
+            fclose(f);
+        }
+
         // Load xclbin
         std::cout << "Loading xclbin: " << xclbin_path << std::endl;
         auto xclbin = xrt::xclbin(xclbin_path);
