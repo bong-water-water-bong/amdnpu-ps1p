@@ -4,26 +4,76 @@ Focus on:
 1. What the change does to firmware parsing — new sections, fields, edge cases
 2. Binary format correctness — endianness, offset math, size boundaries
 3. Backward compatibility — new firmware vs old firmware (v1.0.0.166 vs v1.1.2.65)
-4. Breaking CLI or API changes — Python public interface changes
+4. Breaking CLI or API changes — argparse args, Python public interface changes
 Use bullet points. Keep it under 250 words.
 """
 
 [pr_reviewer]
 extra_instructions = """
-Prioritize:
-1. Binary parsing correctness — buffer overflows, signed/unsigned issues, hardcoded offsets
-2. Edge cases — truncated firmware, zero-length sections, missing magic bytes, malformed headers
-3. Cross-version compatibility — both firmware variants (old boot fw + new runtime fw) handled
-4. Error handling — what happens on parse failure? Graceful degradation or crash?
-5. Test coverage — both old and new firmware fixtures exercised?
-6. Performance — scanning entire 429KB firmware multiple times, unnecessary copies
+You are reviewing firmware RE (reverse engineering) tooling for AMD NPU $PS1p containers and VE2 IPU firmware.
+This is systems-software work — be surgical.
 
-Flag as critical:
-- Indexing past end of buffer without bounds check
-- Hardcoded offsets that don't work across firmware versions
-- Unchecked assumptions about section ordering or presence
+## Context to Load Before Reviewing
 
-Ignore minor style nits (naming, formatting) unless they obscure intent.
+This repo has TWO firmware variants that MUST both parse correctly:
+- **New firmware** (`npu.sbin.1.1.2.65`): ~429KB, $PS1p header at offset 0x10, 8 sections, RSA signature in footer at 0x68D70
+- **Old firmware** (`npu.sbin.1.0.0.166`): ~376KB, $PS1\\xc0 variant magic at 0x10, partition table INSIDE code section at 0x40950, NO string table, NO RSA signature
+
+The $PS1p container format:
+- Header 0x0-0x21F (544 bytes), magic at 0x10
+- Claimed data size at 0x50 (little-endian uint32)
+- Section descriptor block at 0x100-0x11F
+- SHA-256 hex string of entire firmware at 0x130-0x16F
+- Version string "Release X.X.X.XX" at 0x1D0
+- RSA signature in footer (new firmware only): 256 bytes at 0x68D70
+- First 16 bytes of header = signed content placeholder (SHA-256(body)[:16] in patched fw)
+
+The VE2 IPU ISA:
+- Dual-issue 16-bit VLIW (32-bit word = 2 halfwords)
+- 4-bit opcode field (16 major classes: NOP=0x0, ALU=0x2, CMP=0x3, BRANCH=0x7, RET/BEQ=0x8, LOAD_OFF=0xc, etc.)
+- 16 registers (r0-r15)
+- 39% of opcodes are NOP (VLIW slot padding)
+
+## What to Check in Every PR
+
+### Binary Parsing (CRITICAL)
+- [ ] Every `struct.unpack` / `int.from_bytes` has explicit endianness (little-endian)
+- [ ] Every slice is bounds-checked: `fw[start:end]` where end <= len(fw), not just start < len(fw)
+- [ ] No hardcoded offsets that only work for one firmware version
+- [ ] Old firmware partitions inside code section handled (partition table at 0x40950, not 0x5C73A)
+- [ ] Empty sections handled gracefully (old fw has no string_table, no rsa_sig)
+- [ ] Truncated firmware files don't crash — they raise informative errors
+
+### Cross-Version Compatibility
+- [ ] Both firmware fixtures are loaded in tests (check conftest.py for FW_NEW and FW_OLD paths)
+- [ ] Code doesn't assume all 8 sections exist
+- [ ] SHA-256 computed correctly — patched firmware's header[:16] != header hash; it equals SHA256(body)[:16]
+
+### Edge Cases
+- [ ] Zero-length section boundaries
+- [ ] Entropy calculations clamp to non-negative (fix for -0.0 display from previous bug)
+- [ ] Blob content classification: Xilinx sync word (0x00000001), ARM/Thumb detection thresholds, density requirements
+- [ ] RSA signature is 256 bytes, not variable-length
+
+### Test Coverage
+- [ ] Both old and new firmware fixtures in ps1p/tests/conftest.py are used
+- [ ] pytest (not unittest) — PS1p tests in ps1p/tests/, VE2 tests in tools/ipu_disasm_test.py
+- [ ] 41 ps1p tests pass, 47 disassembler tests pass — no regressions
+
+### Performance
+- [ ] No O(n²) scanning of 429KB firmware
+- [ ] Opcode map builder caches results (not 4x redundant iteration — previous bug)
+- [ ] AIE2 config extractor filters control opcodes to valid range with dynamic region boundaries (previous bug)
+
+### Python Hygiene
+- [ ] Python 3.10+ (python_requires in setup.cfg)
+- [ ] No bare `except:` — catch specific exceptions
+- [ ] f-strings preferred over .format() or %
+- [ ] Type hints on public functions
+- [ ] No mutable default arguments
+
+## Review Tone
+Flag issues with specific, actionable feedback. Say *what* is wrong, *why* it matters for firmware RE correctness, and *how* to fix it. Ignore whitespace nits. Mark buffer-overflow or untrusted-offset bugs as CRITICAL.
 """
 
 [pr_code_suggestions]
@@ -36,7 +86,7 @@ Prefer concrete rewrites over abstract critiques.
 enabled = true
 
 [config]
-verbosity_level = 1
+verbosity_level = 2
 model = "openai/mlx-community/Qwen3-8B-4bit"
 model_params = { api_base = "http://127.0.0.1:18080/v1" }
 fallback_models = "openai/glm-5.2"
