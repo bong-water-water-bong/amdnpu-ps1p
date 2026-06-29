@@ -1,0 +1,23 @@
+VE2 IPU Firmware Serialization Gate - Analysis Report
+=======================================================
+Firmware: /tmp/npu_re/npu_17f0_11_fw_1.1.2.65.sbin
+Size: 429680 bytes
+
+Scheduling string literal pool: 0x032b0 - 0x032b0
+Number of string references: 1
+
+Key error message at file offset:
+  0x1e5f0: "%s: Application %u is not allocated."
+  0x1e616: "%s: Failed to get last executed app_id."
+  0x1e63f: "%s: Application %%u is not the last scheduled. The last scheduled was %%d."
+
+Patch Location (hypothesized):
+  Conditional branch at ~0x2DD0-0x2E50 that gates the error path
+  Replace the BNE/BEQ with NOP to bypass serialization check
+
+PATCH INSTRUCTIONS:
+1. Find the conditional branch instruction in the scheduler function
+2. For 'bne rX, rY' -> nop: change hi or lo 16-bit half to 0x0000
+3. For 'beq rX, rY' -> nop: change hi or lo 16-bit half to 0x0000
+4. Save the patched firmware
+5. Compute SHA256 hash for verification
