@@ -1,0 +1,295 @@
+; VE2 IPU Firmware - Serialization Gate Disassembly
+; Region: 0x030b0 - 0x03518
+; Target string references:
+;   0x032b0 -> 0x1e5ef: 
+;   0x032b8 -> 0x1e5f9: cation %u is not allocated.
+;   0x032c0 -> 0x1e612: d.
+;   0x032e0 -> 0x1e627:  last executed app_id.
+;   0x032e8 -> 0x1e633: ed app_id.
+;   0x03304 -> 0x1e669: ed. The last scheduled was %d.
+;   0x03318 -> 0x1e679: eduled was %d.
+; Decoded as dual-issue 16-bit VLIW ISA
+; Format: addr: 32bit_hex  lo_mnem | hi_mnem
+
+  0x030b0: 0x200602eb  ldi r11, 0x2eb                 | ldi r6, 0x2006
+  0x030b4: 0x0001d519  opd.sub5 r1, r9                | mov r1, #0
+  0x030b8: 0x200602ed  ldi r13, 0x2ed                 | ldi r6, 0x2006
+  0x030bc: 0x02000002  mov r2, #0                     | ldi r0, 0x200
+  0x030c0: 0x28b0613c  op6.sub1 r3, r12               | lsh r11, r0
+  0x030c4: 0x0001d546  opd.sub5 r4, r6                | mov r1, #0
+  0x030c8: 0x20060310  op0.sub3 r1, r0                | ldi r6, 0x2006
+  0x030cc: 0x2006031c  op0.sub3 r1, r12               | ldi r6, 0x2006
+  0x030d0: 0x0001d560  opd.sub5 r6, r0                | mov r1, #0
+  0x030d4: 0x2006032b  op0.sub3 r2, r11               | ldi r6, 0x2006
+  0x030d8: 0x00022298  op2.sub2 r9, r8                | mov r2, #0
+  0x030dc: 0x0001d5a6  opd.sub5 r10, r6               | mov r1, #0
+  0x030e0: 0x20060366  op0.sub3 r6, r6                | ldi r6, 0x2006
+  0x030e4: 0x0001d5d1  opd.sub5 r13, r1               | mov r1, #0
+  0x030e8: 0x20060373  op0.sub3 r7, r3                | ldi r6, 0x2006
+  0x030ec: 0x0001d5f1  opd.sub5 r15, r1               | mov r1, #0
+  0x030f0: 0x2006037a  op0.sub3 r7, r10               | ldi r6, 0x2006
+  0x030f4: 0x2006037f  op0.sub3 r7, r15               | ldi r6, 0x2006
+  0x030f8: 0x0001d612  opd.sub6 r1, r2                | mov r1, #0
+  0x030fc: 0x20060391  op0.sub3 r9, r1                | ldi r6, 0x2006
+  0x03100: 0x0001d63b  opd.sub6 r3, r11               | mov r1, #0
+  0x03104: 0x20060396  op0.sub3 r9, r6                | ldi r6, 0x2006
+  0x03108: 0x0001d673  opd.sub6 r7, r3                | mov r1, #0
+  0x0310c: 0x200603a7  op0.sub3 r10, r7               | ldi r6, 0x2006
+  0x03110: 0x200603af  op0.sub3 r10, r15              | ldi r6, 0x2006
+  0x03114: 0x200603b7  op0.sub3 r11, r7               | ldi r6, 0x2006
+  0x03118: 0x00026800  op6.sub8 r0, r0                | mov r2, #0
+  0x0311c: 0x030dc000  ld r0, [r0]                    | op0.sub3 r0, r13
+  0x03120: 0x030dc004  ldi r4, 0xc004                 | op0.sub3 r0, r13
+  0x03124: 0x030dd000  opd.sub0 r0, r0                | op0.sub3 r0, r13
+  0x03128: 0x030dd004  ldi r4, 0xd004                 | op0.sub3 r0, r13
+  0x0312c: 0x55504e5f  op4.sub14 r5, r15              | st r5, [r0]
+  0x03130: 0x00026000  op6.sub0 r0, r0                | mov r2, #0
+  0x03134: 0x0001d6a7  opd.sub6 r10, r7               | mov r1, #0
+  0x03138: 0x2006041c  op0.sub4 r1, r12               | ldi r6, 0x2006
+  0x0313c: 0x0001d6d2  opd.sub6 r13, r2               | mov r1, #0
+  0x03140: 0x2006041f  op0.sub4 r1, r15               | ldi r6, 0x2006
+  0x03144: 0x0001d70e  opd.sub7 r0, r14               | mov r1, #0
+  0x03148: 0x20060423  op0.sub4 r2, r3                | ldi r6, 0x2006
+  0x0314c: 0x00007590  op7.sub5 r9, r0                 ; (hi=nop)
+  0x03150: 0x0001d73b  opd.sub7 r3, r11               | mov r1, #0
+  0x03154: 0x20060426  op0.sub4 r2, r6                | ldi r6, 0x2006
+  0x03158: 0x0001d758  opd.sub7 r5, r8                | mov r1, #0
+  0x0315c: 0x20060427  op0.sub4 r2, r7                | ldi r6, 0x2006
+  0x03160: 0x0001d794  opd.sub7 r9, r4                | mov r1, #0
+  0x03164: 0x2006042a  op0.sub4 r2, r10               | ldi r6, 0x2006
+  0x03168: 0x0001d7c3  opd.sub7 r12, r3               | mov r1, #0
+  0x0316c: 0x20060436  op0.sub4 r3, r6                | ldi r6, 0x2006
+  0x03170: 0x0001d7ff  opd.sub7 r15, r15              | mov r1, #0
+  0x03174: 0x20060439  op0.sub4 r3, r9                | ldi r6, 0x2006
+  0x03178: 0x0001d82e  opd.sub8 r2, r14               | mov r1, #0
+  0x0317c: 0x2006043c  op0.sub4 r3, r12               | ldi r6, 0x2006
+  0x03180: 0x0001d86a  opd.sub8 r6, r10               | mov r1, #0
+  0x03184: 0x2006043f  op0.sub4 r3, r15               | ldi r6, 0x2006
+  0x03188: 0x0001d899  opd.sub8 r9, r9                | mov r1, #0
+  0x0318c: 0x20060448  op0.sub4 r4, r8                | ldi r6, 0x2006
+  0x03190: 0x0001d8b7  opd.sub8 r11, r7               | mov r1, #0
+  0x03194: 0x2006044c  op0.sub4 r4, r12               | ldi r6, 0x2006
+  0x03198: 0x0001d8e3  opd.sub8 r14, r3               | mov r1, #0
+  0x0319c: 0x20060451  op0.sub4 r5, r1                | ldi r6, 0x2006
+  0x031a0: 0xaaaaaaaa  opa.sub10 r10, r10             | opa.sub10 r10, r10
+  0x031a4: 0x0001d901  opd.sub9 r0, r1                | mov r1, #0
+  0x031a8: 0x20060454  op0.sub4 r5, r4                | ldi r6, 0x2006
+  0x031ac: 0x0001d939  opd.sub9 r3, r9                | mov r1, #0
+  0x031b0: 0x2006045b  op0.sub4 r5, r11               | ldi r6, 0x2006
+  0x031b4: 0x24000400  op0.sub4 r0, r0                | op2.sub4 r0, r0
+  0x031b8: 0x0001dc94  opd.sub12 r9, r4               | mov r1, #0
+  0x031bc: 0x200606e0  op0.sub6 r14, r0               | ldi r6, 0x2006
+  0x031c0: 0x0001dccf  opd.sub12 r12, r15             | mov r1, #0
+  0x031c4: 0x200606fa  op0.sub6 r15, r10              | ldi r6, 0x2006
+  0x031c8: 0x27010958  op0.sub9 r5, r8                | op2.sub7 r0, r1
+  0x031cc: 0x000fff20  opf.sub15 r2, r0               | mov r15, #0
+  0x031d0: 0x0001d971  opd.sub9 r7, r1                | mov r1, #0
+  0x031d4: 0x200604cd  op0.sub4 r12, r13              | ldi r6, 0x2006
+  0x031d8: 0x27010954  op0.sub9 r5, r4                | op2.sub7 r0, r1
+  0x031dc: 0x0001d9a4  opd.sub9 r10, r4               | mov r1, #0
+  0x031e0: 0x200604dc  op0.sub4 r13, r12              | ldi r6, 0x2006
+  0x031e4: 0x0001da54  opd.sub10 r5, r4               | mov r1, #0
+  0x031e8: 0x2006052a  op0.sub5 r2, r10               | ldi r6, 0x2006
+  0x031ec: 0x0001da5e  opd.sub10 r5, r14              | mov r1, #0
+  0x031f0: 0x20060530  op0.sub5 r3, r0                | ldi r6, 0x2006
+  0x031f4: 0x0001dedd  opd.sub14 r13, r13             | mov r1, #0
+  0x031f8: 0x20060545  op0.sub5 r4, r5                | ldi r6, 0x2006
+  0x031fc: 0x0001da68  opd.sub10 r6, r8               | mov r1, #0
+  0x03200: 0x20060549  op0.sub5 r4, r9                | ldi r6, 0x2006
+  0x03204: 0x0001da77  opd.sub10 r7, r7               | mov r1, #0
+  0x03208: 0x20060554  op0.sub5 r5, r4                | ldi r6, 0x2006
+  0x0320c: 0x0001dac6  opd.sub10 r12, r6              | mov r1, #0
+  0x03210: 0x20060571  op0.sub5 r7, r1                | ldi r6, 0x2006
+  0x03214: 0x0001da49  opd.sub10 r4, r9               | mov r1, #0
+  0x03218: 0x20060572  op0.sub5 r7, r2                | ldi r6, 0x2006
+  0x0321c: 0x0001dad5  opd.sub10 r13, r5              | mov r1, #0
+  0x03220: 0x20060574  op0.sub5 r7, r4                | ldi r6, 0x2006
+  0x03224: 0x0001daec  opd.sub10 r14, r12             | mov r1, #0
+  0x03228: 0x20060578  op0.sub5 r7, r8                | ldi r6, 0x2006
+  0x0322c: 0x0001db01  opd.sub11 r0, r1               | mov r1, #0
+  0x03230: 0x200605a8  op0.sub5 r10, r8               | ldi r6, 0x2006
+  0x03234: 0x200605ab  op0.sub5 r10, r11              | ldi r6, 0x2006
+  0x03238: 0x200605af  op0.sub5 r10, r15              | ldi r6, 0x2006
+  0x0323c: 0x0001db0d  opd.sub11 r0, r13              | mov r1, #0
+  0x03240: 0x200605ba  op0.sub5 r11, r10              | ldi r6, 0x2006
+  0x03244: 0xd763d000  opd.sub0 r0, r0                | opd.sub7 r6, r3
+  0x03248: 0x200605fd  op0.sub5 r15, r13              | ldi r6, 0x2006
+  0x0324c: 0x0001db5e  opd.sub11 r5, r14              | mov r1, #0
+  0x03250: 0x20060601  op0.sub6 r0, r1                | ldi r6, 0x2006
+  0x03254: 0x0001dbae  opd.sub11 r10, r14             | mov r1, #0
+  0x03258: 0x27010028  mov r1=r2, r2=r8               | op2.sub7 r0, r1
+  0x0325c: 0x20060672  op0.sub6 r7, r2                | ldi r6, 0x2006
+  0x03260: 0x02000001  mov r1, #0                     | ldi r0, 0x200
+  0x03264: 0x0001dbe4  opd.sub11 r14, r4              | mov r1, #0
+  0x03268: 0x20060679  op0.sub6 r7, r9                | ldi r6, 0x2006
+  0x0326c: 0x0001dc1a  opd.sub12 r1, r10              | mov r1, #0
+  0x03270: 0x200606c2  op0.sub6 r12, r2               | ldi r6, 0x2006
+  0x03274: 0x0001dc53  opd.sub12 r5, r3               | mov r1, #0
+  0x03278: 0x200606cc  op0.sub6 r12, r12              | ldi r6, 0x2006
+  0x0327c: 0x0001dc72  opd.sub12 r7, r2               | mov r1, #0
+  0x03280: 0x28b05fe0  st r14, [r0]                   | lsh r11, r0
+  0x03284: 0x28b09024  op9.sub0 r2, r4                | lsh r11, r0
+  0x03288: 0x28b09078  op9.sub0 r7, r8                | lsh r11, r0
+  0x0328c: 0x0001dd0b  opd.sub13 r0, r11              | mov r1, #0
+  0x03290: 0x2006070b  op0.sub7 r0, r11               | ldi r6, 0x2006
+  0x03294: 0x0001dd45  opd.sub13 r4, r5               | mov r1, #0
+  0x03298: 0x20060713  op0.sub7 r1, r3                | ldi r6, 0x2006
+  0x0329c: 0x28a80908  op0.sub9 r0, r8                | lsh r10, r8
+  0x032a0: 0x28a80018  mov r1=r1, r2=r8               | lsh r10, r8
+  0x032a4: 0x0001dd72  opd.sub13 r7, r2               | mov r1, #0
+  0x032a8: 0x2006079b  op0.sub7 r9, r11               | ldi r6, 0x2006
+  0x032ac: 0x28a80034  mov r1=r3, r2=r4               | lsh r10, r8
+  0x032b0: 0x28a80038  mov r1=r3, r2=r8               | lsh r10, r8
+  0x032b4: 0x28a80014  mov r1=r1, r2=r4               | lsh r10, r8
+  0x032b8: 0x28a80020  str r2                         | lsh r10, r8
+  0x032bc: 0x0001a090  opa.sub0 r9, r0                | mov r1, #0
+  0x032c0: 0x0001a190  opa.sub1 r9, r0                | mov r1, #0
+  0x032c4: 0x0001dda8  opd.sub13 r10, r8              | mov r1, #0
+  0x032c8: 0x00008880  op8.sub8 r8, r0                 ; (hi=nop)
+  0x032cc: 0x00008948  op8.sub9 r4, r8                 ; (hi=nop)
+  0x032d0: 0x000088b8  op8.sub8 r11, r8                ; (hi=nop)
+  0x032d4: 0x00008988  op8.sub9 r8, r8                 ; (hi=nop)
+  0x032d8: 0x000089b0  op8.sub9 r11, r0                ; (hi=nop)
+  0x032dc: 0x0001ddb0  opd.sub13 r11, r0              | mov r1, #0
+  0x032e0: 0x20080080  str r8                         | ldi r8, 0x2008
+  0x032e4: 0xffff00ff  mov r1=r15, r2=r15             | opf.sub15 r15, r15
+  0x032e8: 0x28a80044  mov r1=r4, r2=r4               | lsh r10, r8
+  0x032ec: 0x0001d445  opd.sub4 r4, r5                | mov r1, #0
+  0x032f0: 0x200800a5  mov r1=r10, r2=r5              | ldi r8, 0x2008
+  0x032f4: 0x28a80030  str r3                         | lsh r10, r8
+  0x032f8: 0x0001a024  opa.sub0 r2, r4                | mov r1, #0
+  0x032fc: 0x0001e4b4  ope.sub4 r11, r4               | mov r1, #0
+  0x03300: 0x20080ebb  op0.sub14 r11, r11             | ldi r8, 0x2008
+  0x03304: 0x28b09538  op9.sub5 r3, r8                | lsh r11, r0
+  0x03308: 0x04000001  mov r1, #0                     | op0.sub4 r0, r0
+  0x0330c: 0x04000006  mov r6, #0                     | op0.sub4 r0, r0
+  0x03310: 0x04000003  mov r3, #0                     | op0.sub4 r0, r0
+  0x03314: 0x04000004  mov r4, #0                     | op0.sub4 r0, r0
+  0x03318: 0x0001dde1  opd.sub13 r14, r1              | mov r1, #0
+  0x0331c: 0x20080433  op0.sub4 r3, r3                | ldi r8, 0x2008
+  0x03320: 0x0001de0b  opd.sub14 r0, r11              | mov r1, #0
+  0x03324: 0x20080438  op0.sub4 r3, r8                | ldi r8, 0x2008
+  0x03328: 0x0001de24  opd.sub14 r2, r4               | mov r1, #0
+  0x0332c: 0x20080448  op0.sub4 r4, r8                | ldi r8, 0x2008
+  0x03330: 0x0001de7b  opd.sub14 r7, r11              | mov r1, #0
+  0x03334: 0x20080458  op0.sub4 r5, r8                | ldi r8, 0x2008
+  0x03338: 0x28b13970  cmp r7, r0                     | lsh r11, r1
+  0x0333c: 0x0001de95  opd.sub14 r9, r5               | mov r1, #0
+  0x03340: 0x2008070e  op0.sub7 r0, r14               | ldi r8, 0x2008
+  0x03344: 0x0001debd  opd.sub14 r11, r13             | mov r1, #0
+  0x03348: 0x0001decc  opd.sub14 r12, r12             | mov r1, #0
+  0x0334c: 0x20080720  op0.sub7 r2, r0                | ldi r8, 0x2008
+  0x03350: 0x0001df02  opd.sub15 r0, r2               | mov r1, #0
+  0x03354: 0x2008072c  op0.sub7 r2, r12               | ldi r8, 0x2008
+  0x03358: 0x0001e4f0  ope.sub4 r15, r0               | mov r1, #0
+  0x0335c: 0x200805cb  op0.sub5 r12, r11              | ldi r8, 0x2008
+  0x03360: 0x0001e516  ope.sub5 r1, r6                | mov r1, #0
+  0x03364: 0x200805d1  op0.sub5 r13, r1               | ldi r8, 0x2008
+  0x03368: 0x02000009  mov r9, #0                     | ldi r0, 0x200
+  0x0336c: 0x0001e53f  ope.sub5 r3, r15               | mov r1, #0
+  0x03370: 0x200805d6  op0.sub5 r13, r6               | ldi r8, 0x2008
+  0x03374: 0x0001dedd  opd.sub14 r13, r13             | mov r1, #0
+  0x03378: 0x2008079b  op0.sub7 r9, r11               | ldi r8, 0x2008
+  0x0337c: 0x0001df52  opd.sub15 r5, r2               | mov r1, #0
+  0x03380: 0x200807a7  op0.sub7 r10, r7               | ldi r8, 0x2008
+  0x03384: 0x00022374  op2.sub3 r7, r4                | mov r2, #0
+  0x03388: 0x0400000b  mov r11, #0                    | op0.sub4 r0, r0
+  0x0338c: 0x0001dfa4  opd.sub15 r10, r4              | mov r1, #0
+  0x03390: 0x20080938  op0.sub9 r3, r8                | ldi r8, 0x2008
+  0x03394: 0x0001dfc2  opd.sub15 r12, r2              | mov r1, #0
+  0x03398: 0x2008093c  op0.sub9 r3, r12               | ldi r8, 0x2008
+  0x0339c: 0x0001e004  ldi r4, 0xe004                 | mov r1, #0
+  0x033a0: 0x20080954  op0.sub9 r5, r4                | ldi r8, 0x2008
+  0x033a4: 0x0001e029  ope.sub0 r2, r9                | mov r1, #0
+  0x033a8: 0x20080959  op0.sub9 r5, r9                | ldi r8, 0x2008
+  0x033ac: 0x2008095d  op0.sub9 r5, r13               | ldi r8, 0x2008
+  0x033b0: 0x28a80010  str r1                         | lsh r10, r8
+  0x033b4: 0x28a80904  op0.sub9 r0, r4                | lsh r10, r8
+  0x033b8: 0x04000009  mov r9, #0                     | op0.sub4 r0, r0
+  0x033bc: 0x0400000a  mov r10, #0                    | op0.sub4 r0, r0
+  0x033c0: 0x28b1368c  cmp r8, r12                    | lsh r11, r1
+  0x033c4: 0x0001eb00  ope.sub11 r0, r0               | mov r1, #0
+  0x033c8: 0x20080b26  op0.sub11 r2, r6               | ldi r8, 0x2008
+  0x033cc: 0x02000003  mov r3, #0                     | ldi r0, 0x200
+  0x033d0: 0x03ffe000  ope.sub0 r0, r0                | op0.sub3 r15, r15
+  0x033d4: 0x030d5008  ldi r8, 0x5008                 | op0.sub3 r0, r13
+  0x033d8: 0x000223c0  op2.sub3 r12, r0               | mov r2, #0
+  0x033dc: 0x0001e05b  ope.sub0 r5, r11               | mov r1, #0
+  0x033e0: 0x20080b60  op0.sub11 r6, r0               | ldi r8, 0x2008
+  0x033e4: 0x20080b67  op0.sub11 r6, r7               | ldi r8, 0x2008
+  0x033e8: 0x0001e09c  ope.sub0 r9, r12               | mov r1, #0
+  0x033ec: 0x20080b82  op0.sub11 r8, r2               | ldi r8, 0x2008
+  0x033f0: 0x0001e0d9  ope.sub0 r13, r9               | mov r1, #0
+  0x033f4: 0x20080b90  op0.sub11 r9, r0               | ldi r8, 0x2008
+  0x033f8: 0x0001e134  ope.sub1 r3, r4                | mov r1, #0
+  0x033fc: 0x20080ba5  op0.sub11 r10, r5              | ldi r8, 0x2008
+  0x03400: 0x28010008  mov r8, #0                     | lsh r0, r1
+  0x03404: 0x030d7008  ldi r8, 0x7008                 | op0.sub3 r0, r13
+  0x03408: 0x0001e164  ope.sub1 r6, r4                | mov r1, #0
+  0x0340c: 0x20080c80  call 0x0c80                    | ldi r8, 0x2008
+  0x03410: 0x0001e187  ope.sub1 r8, r7                | mov r1, #0
+  0x03414: 0x20080c87  call 0x0c87                    | ldi r8, 0x2008
+  0x03418: 0x0001e1a2  ope.sub1 r10, r2               | mov r1, #0
+  0x0341c: 0x20080caf  call 0x0caf                    | ldi r8, 0x2008
+  0x03420: 0x0001e1bf  ope.sub1 r11, r15              | mov r1, #0
+  0x03424: 0x20080cb4  call 0x0cb4                    | ldi r8, 0x2008
+  0x03428: 0x0001a1d0  opa.sub1 r13, r0               | mov r1, #0
+  0x0342c: 0x04000007  mov r7, #0                     | op0.sub4 r0, r0
+  0x03430: 0x0001e1f1  ope.sub1 r15, r1               | mov r1, #0
+  0x03434: 0x20080cbb  call 0x0cbb                    | ldi r8, 0x2008
+  0x03438: 0x0001e21d  ope.sub2 r1, r13               | mov r1, #0
+  0x0343c: 0x20080cc7  call 0x0cc7                    | ldi r8, 0x2008
+  0x03440: 0x0001e2e7  ope.sub2 r14, r7               | mov r1, #0
+  0x03444: 0x20080e60  op0.sub14 r6, r0               | ldi r8, 0x2008
+  0x03448: 0x0001e318  ope.sub3 r1, r8                | mov r1, #0
+  0x0344c: 0x20080e62  op0.sub14 r6, r2               | ldi r8, 0x2008
+  0x03450: 0x0001e344  ope.sub3 r4, r4                | mov r1, #0
+  0x03454: 0x20080e68  op0.sub14 r6, r8               | ldi r8, 0x2008
+  0x03458: 0x0001e364  ope.sub3 r6, r4                | mov r1, #0
+  0x0345c: 0x20080e70  op0.sub14 r7, r0               | ldi r8, 0x2008
+  0x03460: 0x0001e3ae  ope.sub3 r10, r14              | mov r1, #0
+  0x03464: 0x20080e76  op0.sub14 r7, r6               | ldi r8, 0x2008
+  0x03468: 0x0001e3cf  ope.sub3 r12, r15              | mov r1, #0
+  0x0346c: 0x20080e78  op0.sub14 r7, r8               | ldi r8, 0x2008
+  0x03470: 0x0001e413  ope.sub4 r1, r3                | mov r1, #0
+  0x03474: 0x20080e84  op0.sub14 r8, r4               | ldi r8, 0x2008
+  0x03478: 0x0001e464  ope.sub4 r6, r4                | mov r1, #0
+  0x0347c: 0x20080e93  op0.sub14 r9, r3               | ldi r8, 0x2008
+  0x03480: 0x0100000c  mov r12, #0                    | op0.sub1 r0, r0
+  0x03484: 0x20080d24  op0.sub13 r2, r4               | ldi r8, 0x2008
+  0x03488: 0x0001e25d  ope.sub2 r5, r13               | mov r1, #0
+  0x0348c: 0x20080d38  op0.sub13 r3, r8               | ldi r8, 0x2008
+  0x03490: 0x0001e27f  ope.sub2 r7, r15               | mov r1, #0
+  0x03494: 0x20080d72  op0.sub13 r7, r2               | ldi r8, 0x2008
+  0x03498: 0x0001e298  ope.sub2 r9, r8                | mov r1, #0
+  0x0349c: 0x20080d7f  op0.sub13 r7, r15              | ldi r8, 0x2008
+  0x034a0: 0x0001e589  ope.sub5 r8, r9                | mov r1, #0
+  0x034a4: 0x200801cc  op0.sub1 r12, r12              | ldi r8, 0x2008
+  0x034a8: 0x0001e5b1  ope.sub5 r11, r1               | mov r1, #0
+  0x034ac: 0x200801cd  op0.sub1 r12, r13              | ldi r8, 0x2008
+  0x034b0: 0x0001e599  ope.sub5 r9, r9                | mov r1, #0
+  0x034b4: 0x200801ce  op0.sub1 r12, r14              | ldi r8, 0x2008
+  0x034b8: 0x0001e5a4  ope.sub5 r10, r4               | mov r1, #0
+  0x034bc: 0x200801cf  op0.sub1 r12, r15              | ldi r8, 0x2008
+  0x034c0: 0x0001e5b9  ope.sub5 r11, r9               | mov r1, #0
+  0x034c4: 0x200801d0  op0.sub1 r13, r0               | ldi r8, 0x2008
+  0x034c8: 0x0001e5df  ope.sub5 r13, r15              | mov r1, #0
+  0x034cc: 0x200801d1  op0.sub1 r13, r1               | ldi r8, 0x2008
+  0x034d0: 0x0001e5ef  ope.sub5 r14, r15              | mov r1, #0
+  0x034d4: 0x200801d2  op0.sub1 r13, r2               | ldi r8, 0x2008
+  0x034d8: 0x0001e5f9  ope.sub5 r15, r9               | mov r1, #0
+  0x034dc: 0x200801d3  op0.sub1 r13, r3               | ldi r8, 0x2008
+  0x034e0: 0x0001e612  ope.sub6 r1, r2                | mov r1, #0
+  0x034e4: 0x200801d4  op0.sub1 r13, r4               | ldi r8, 0x2008
+  0x034e8: 0x200806a1  op0.sub6 r10, r1               | ldi r8, 0x2008
+  0x034ec: 0x7771e9ae  ope.sub9 r10, r14              | op7.sub7 r7, r1
+  0x034f0: 0x87b3d871  opd.sub8 r7, r1                | op8.sub7 r11, r3
+  0x034f4: 0x0001e4f4  ope.sub4 r15, r4               | mov r1, #0
+  0x034f8: 0x2008056f  op0.sub5 r6, r15               | ldi r8, 0x2008
+  0x034fc: 0x0001e92c  ope.sub9 r2, r12               | mov r1, #0
+  0x03500: 0x0001e627  ope.sub6 r2, r7                | mov r1, #0
+  0x03504: 0x200801df  op0.sub1 r13, r15              | ldi r8, 0x2008
+  0x03508: 0x0001e633  ope.sub6 r3, r3                | mov r1, #0
+  0x0350c: 0x200801ee  op0.sub1 r14, r14              | ldi r8, 0x2008
+  0x03510: 0x0001d63b  opd.sub6 r3, r11               | mov r1, #0
+  0x03514: 0x200801f4  op0.sub1 r15, r4               | ldi r8, 0x2008
