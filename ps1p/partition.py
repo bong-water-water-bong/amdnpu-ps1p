@@ -27,9 +27,9 @@ class PartitionEntry:
     
     @property
     def is_code(self) -> bool:
-        """Check if this entry references code region."""
+        """Check if this entry references a code region (VA >= 0x28B00000)."""
         va = self.first_va
-        return va is not None and (va & 0xFFFF0000) in (0x28B00000, 0x28A80000)
+        return va is not None and va >= VA_CODE_BASE
     
     def __repr__(self) -> str:
         flds = ', '.join(f'0x{f:08x}' if f > 0xFFFF else str(f) for f in self.fields[:6])
