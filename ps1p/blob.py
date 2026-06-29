@@ -94,8 +94,18 @@ class BlobAnalyzer:
         printable_ratio = printable / len(data)
         null_ratio = nulls / len(data)
 
+        # Compute sync word density for Xilinx bitstream classification
+        sync_count = data.count(XILINX_SYNC)
+        sync_density = sync_count / max(1, len(data)) * 1024  # per KB
+
+        # Require at least 1 thumb prologue per 4096 bytes for arm_code
+        thumb_density_valid = thumb_count > len(data) / 4096
+
         classification = BlobAnalyzer._classify(
-            ent, printable_ratio, null_ratio, thumb_count, has_xilinx, has_elf
+            ent, printable_ratio, null_ratio, thumb_count,
+            has_xilinx and sync_density > 0.5,  # require > 0.5 syncs/KB
+            has_elf,
+            thumb_density_valid
         )
 
         code_types: list[str] = []
@@ -195,22 +205,29 @@ class BlobAnalyzer:
         thumb_count: int,
         has_xilinx: bool,
         has_elf: bool,
+        thumb_density_valid: bool = True,
     ) -> str:
         """Classify binary blob type based on computed metrics.
 
-        Priority order: ELF > bitstream > ARM code > text > high entropy
-        > binary code > sparse data > data table > low entropy data.
+        Priority order: ELF > ARM code (with high entropy) > text > high entropy
+        > Xilinx bitstream > binary code > sparse data > data table > low
+        entropy data.
+
+        Note: ``has_xilinx`` is already filtered by sync-word density at the
+        call site so that stray ``0xAA99`` pairs in random code don't trigger
+        false positives. Similarly ``thumb_density_valid`` ensures stray
+        half-word matches don't trigger false ARM Thumb detection.
         """
         if has_elf:
             return 'elf_binary'
-        if has_xilinx:
-            return 'xilinx_bitstream'
-        if thumb_count > 0:
+        if thumb_count > 0 and thumb_density_valid:
             return 'arm_code'
         if printable_ratio > 0.6:
             return 'text_strings'
         if ent > 7.8:
             return 'high_entropy (possibly encrypted)'
+        if has_xilinx:
+            return 'xilinx_bitstream'
         if ent > 6.0 and null_ratio < 0.2:
             return 'binary_code'
         if null_ratio > 0.6:
