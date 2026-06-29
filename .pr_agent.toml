@@ -11,69 +11,202 @@ Use bullet points. Keep it under 250 words.
 [pr_reviewer]
 extra_instructions = """
 You are reviewing firmware RE (reverse engineering) tooling for AMD NPU $PS1p containers and VE2 IPU firmware.
-This is systems-software work — be surgical.
+Before analyzing the PR diff, you MUST research and understand the full domain context below.
 
-## Context to Load Before Reviewing
+================================================================================
+DOMAIN RESEARCH — AMD NPU FIRMWARE RE (Reverse Engineering)
+================================================================================
 
-This repo has TWO firmware variants that MUST both parse correctly:
-- **New firmware** (`npu.sbin.1.1.2.65`): ~429KB, $PS1p header at offset 0x10, 8 sections, RSA signature in footer at 0x68D70
-- **Old firmware** (`npu.sbin.1.0.0.166`): ~376KB, $PS1\\xc0 variant magic at 0x10, partition table INSIDE code section at 0x40950, NO string table, NO RSA signature
+## Platform & Hardware Context
+- Target: Strix Halo (Ryzen AI MAX+ 395), PCI 17f0:11, XDNA 2 NPU (8 columns)
+- Driver: amdxdna.ko (in-tree kernel driver at /usr/src/linux.../accel/amdxdna/)
+- NPU firmware: VE2 (NPU5) — NOT legacy NPU4/AIE2 SMU architecture
+- Active firmware version: 1.1.2.65 (runtime firmware, 429KB)
+- Boot firmware version: 1.0.0.166 (init/power-up firmware, 376KB)
+- Both stored at /lib/firmware/amdnpu/17f0_11/
+- XRT: 2.21.75, loaded via xrt-smi
 
-The $PS1p container format:
-- Header 0x0-0x21F (544 bytes), magic at 0x10
-- Claimed data size at 0x50 (little-endian uint32)
-- Section descriptor block at 0x100-0x11F
+## TWO Firmware Variants — MUST Support Both
+
+This repo MUST handle both firmware variants. They have fundamentally different layouts:
+
+### NEW Firmware (v1.1.2.65, runtime firmware, 429680 bytes)
+- Magic "$PS1p" at offset 0x10
+- 8 sections: header, ipu_code, string_table, sub_payload, part_table, padding, rsa_sig, trailer
+- Header: 0x0-0x21F (544 bytes), version "Release 1.1.2.65" at 0x1D0
+- Claimed data size at 0x50 = 0x68C70 (429168), actual = 0x68E70 (429680)
 - SHA-256 hex string of entire firmware at 0x130-0x16F
-- Version string "Release X.X.X.XX" at 0x1D0
-- RSA signature in footer (new firmware only): 256 bytes at 0x68D70
-- First 16 bytes of header = signed content placeholder (SHA-256(body)[:16] in patched fw)
+- Section descriptor block at 0x100-0x11F (values: 0,1,1,2,65,7,2,0)
+- Code section at 0x220-0x1C000 (114144 bytes, entropy ~6.21 = likely encrypted)
+- String table at 0x1C000-0x20000 (16384 bytes, actual content extends to ~0x2125C)
+- Partition table at 0x68A00 (inside code section area? verify)
+- RSA signature: 256 bytes at 0x68D70 (high entropy ~7.8)
+- First 16 bytes of header = SHA-256(body)[:16] used as placeholder for patched firmware
+- FIRST 16 BYTES OF FILE ARE THE SIGNED CONTENT — used for PSP_VALIDATE authentication
 
-The VE2 IPU ISA:
-- Dual-issue 16-bit VLIW (32-bit word = 2 halfwords)
-- 4-bit opcode field (16 major classes: NOP=0x0, ALU=0x2, CMP=0x3, BRANCH=0x7, RET/BEQ=0x8, LOAD_OFF=0xc, etc.)
-- 16 registers (r0-r15)
-- 39% of opcodes are NOP (VLIW slot padding)
+### OLD Firmware (v1.0.0.166, boot firmware, 376768 bytes)
+- Magic "$PS1\\xc0" at offset 0x10 (DIFFERENT variant)
+- Completely different section layout — partition table INSIDE code section at 0x40950
+- NO string table section
+- NO RSA signature section
+- NO sub_payload section at the same offset
+- Smaller header, different version string
+- Code section size and boundaries are different
 
-## What to Check in Every PR
+## $PS1p Container Format Details
+- Header is 0x220 bytes (544 bytes)
+- Magic "$PS1p" at offset 0x10 (4 bytes)
+- Header version field at 0x14-0x17: 0x00, 0x00, 0x8C, 0x06 = 1676.0.0 (represents v1.1.2.65)
+- Offset 0x50-0x57: Claimed data size = 0x68C70 (little-endian uint32)
+- Offset 0xD0-0xEF: SHA-256 hash (does NOT match full firmware, body, or code — likely signed hash of composite region)
+- Offset 0x100-0x11F: Section descriptor block (0,1,1,2,65,7,2,0 as 64-bit values)
+- Offset 0x130-0x16F: SHA-256 hex string (64 ASCII chars) of entire firmware
+- Offset 0x1D0-0x1FF: Version string "Release 1.1.2.65" (null-terminated)
+- Footer (0x68C70-0x68E70): 256 bytes zero padding + 256 bytes RSA signature
+- RSA signature at 0x68D70-0x68E70: 256 bytes, entropy ~7.8
 
-### Binary Parsing (CRITICAL)
-- [ ] Every `struct.unpack` / `int.from_bytes` has explicit endianness (little-endian)
-- [ ] Every slice is bounds-checked: `fw[start:end]` where end <= len(fw), not just start < len(fw)
+## VE2 IPU ISA — The Processor That Runs This Firmware
+
+The VE2 IPU uses a custom dual-issue 16-bit VLIW ISA — NOT ARM64, RISC-V, or any standard ISA.
+
+### Instruction Format
+- Each 32-bit word = two 16-bit halfwords (low halfword + high halfword)
+- Dual-issue: both halves execute in parallel
+- 16-bit format breakdown (hypothesized):
+  - Bits [15:12] = opcode (4 bits = 16 major opcodes)
+  - Bits [11:8] = sub-opcode or dest register (4 bits)
+  - Bits [7:4] = operand 1 or source register (4 bits)
+  - Bits [3:0] = operand 2 or immediate (4 bits)
+
+### Key Statistics
+- 28,536 instructions (32-bit words) in code section
+- 39% of all 16-bit halves are opcode 0x0 (NOP — VLIW slot padding)
+- 18.7% of 32-bit words are all-zero (both slots NOP)
+- 77.3% have both slots used
+- All 16 bit positions biased toward zero (66-78%)
+
+### 16 Major Opcode Classes
+| op4 | Name | Frequency | Likely Mnemonic |
+|-----|------|-----------|-----------------|
+| 0x0 | NOP/MOV | 39.0% | NOP, MOV, basic ALU |
+| 0x1 | ADD2 | 4.3% | ADD/ARITH 2 |
+| 0x2 | ARITH | 7.1% | ALU operations (arithmetic/logic) |
+| 0x3 | CMP | 3.6% | COMPARE |
+| 0x4 | MOV/LD | 4.5% | MOVE/LOAD ADDR |
+| 0x5 | STORE | 3.0% | STORE |
+| 0x6 | VEC | 4.0% | VECTOR/COMPLEX |
+| 0x7 | BRANCH | 2.4% | BRA, BNE (unconditional/conditional branch) |
+| 0x8 | BEQ/RET | 6.2% | CONDITIONAL BRANCH, RET |
+| 0x9 | TRANSFER | 4.3% | TRANSFER/MOVE |
+| 0xa | UNK1 | 3.8% | Unclear |
+| 0xb | UNK2 | 2.6% | Unclear |
+| 0xc | LOAD_OFF | 5.6% | LOAD offset/memory |
+| 0xd | UNK3 | 2.3% | Unclear |
+| 0xe | UNK4 | 3.0% | Unclear |
+| 0xf | IMM | 4.2% | IMMEDIATE/CONSTANT |
+
+### Known Code Locations
+- 0x0220: Reset vector / entry point
+- 0x02a0: Vector table
+- 0x0300: Boot initialization code
+- 0x0CXX: Core scheduling functions
+- 0x2DD8-0x2DF4: Serialization gate (7 conditional branch instructions)
+- 0x030b0-0x03518: Gate disassembly region with error string references
+- 0x03280-0x03400: Error logging / string table VLIW packet area
+- 0x067f0: Function calling error logging
+- 0x068ec: Function calling error logging
+
+### Serialization Gate Patch (Important Context for Code Referencing It)
+- The firmware has a "one call at a time" gate that checks if the requesting application matches the "last scheduled application"
+- 7 conditional branch instructions at 0x2DD8-0x2DF4 were NOP'd (op4=8: beq/ret type, comparing app_id registers r4,r6,r7,r8,r10,r11,r12,r15)
+- All instructions were single-issue (hi=0x0000), no VLIW dual-issue hazard
+- Patched bytes: 14 bytes at offsets 11737-11762 (0x2DD9-0x2DE2), plus 16 bytes header updated
+- Error strings referenced: "Application %u is not the last scheduled. The last scheduled was %d."
+
+## Known Bugs in Previous Tooling (DO NOT REINTRODUCE)
+
+### Bug 1: Hardcoded Offsets
+decrypt_ipu_fw.py used NEW firmware section offsets (0x68A00 for partition table, 0x68D70 for RSA)
+on OLD firmware → 0-byte output files because OLD firmware is only 376,768 bytes.
+Old firmware has partition table at 0x40950 INSIDE code section, no RSA signature.
+
+### Bug 2: Zero-Padding Blob Detection
+extract_ipu_fw.py flagged zero-padding region as a content blob (179KB, entropy 0.001).
+Actual binary payload starts at firmware offset 0x4D100.
+
+### Bug 3: String Table Truncation
+String content at 0x20000-0x2125C contains ~4.5KB of debug strings cut off by hardcoded
+0x1C000-0x20000 boundary. String table extends past expected boundary.
+
+### Bug 4: Entropy -0.0 Display
+Entropy calculations could produce -0.0 due to floating-point edge case. Fix: clamp to non-negative.
+
+### Bug 5: Opcode Map 4x Redundant Iteration
+build_opcode_map scanned code section 4 times instead of caching results.
+
+### Bug 6: AIE2 Control Opcode Range
+Control opcodes not filtered to valid range, and region boundaries were hardcoded instead of dynamic.
+
+## String Encoding
+String addresses are loaded using imm20 = address >> 12 in upper 20 bits with lower offset in lower bits.
+Example: 0x0001e5f9 loads string at file offset 0x1e5f9 (base 0x1e000 + offset 0x5f9).
+
+## Why This Matters
+The NPU firmware controls ALL NPU operations. Parsing it correctly is critical for:
+1. Understanding the serialization gate (blocks concurrent NPU access)
+2. Building custom firmware with parallel scheduling
+3. Debugging NPU crashes and IOMMU page faults
+4. The firmware code section is encrypted (entropy ~6.21) with RSA-4096 signature
+5. Only the header/init area may be unencrypted — the gate at 0x2DD8 IS patchable
+
+================================================================================
+END DOMAIN RESEARCH
+================================================================================
+
+## Per-PR Review Checklist
+
+### BINARY PARSING (CRITICAL)
+- [ ] Every struct.unpack / int.from_bytes has explicit endianness (little-endian)
+- [ ] Every slice is bounds-checked: fw[start:end] where end <= len(fw), NOT just start < len(fw)
 - [ ] No hardcoded offsets that only work for one firmware version
 - [ ] Old firmware partitions inside code section handled (partition table at 0x40950, not 0x5C73A)
 - [ ] Empty sections handled gracefully (old fw has no string_table, no rsa_sig)
 - [ ] Truncated firmware files don't crash — they raise informative errors
+- [ ] RSA signature is exactly 256 bytes, not variable-length
 
-### Cross-Version Compatibility
+### CROSS-VERSION COMPATIBILITY
 - [ ] Both firmware fixtures are loaded in tests (check conftest.py for FW_NEW and FW_OLD paths)
 - [ ] Code doesn't assume all 8 sections exist
 - [ ] SHA-256 computed correctly — patched firmware's header[:16] != header hash; it equals SHA256(body)[:16]
+- [ ] Magic byte detection handles BOTH "$PS1p" and "$PS1\\xc0" variants
 
-### Edge Cases
+### EDGE CASES
 - [ ] Zero-length section boundaries
-- [ ] Entropy calculations clamp to non-negative (fix for -0.0 display from previous bug)
-- [ ] Blob content classification: Xilinx sync word (0x00000001), ARM/Thumb detection thresholds, density requirements
-- [ ] RSA signature is 256 bytes, not variable-length
+- [ ] Entropy calculations clamp to non-negative (previous bug fix for -0.0 display)
+- [ ] Blob content classification: Xilinx sync word (0x00000001), ARM/Thumb detection with density thresholds
+- [ ] File sizes near 0 (empty firmware) or huge
 
-### Test Coverage
+### TEST COVERAGE
 - [ ] Both old and new firmware fixtures in ps1p/tests/conftest.py are used
-- [ ] pytest (not unittest) — PS1p tests in ps1p/tests/, VE2 tests in tools/ipu_disasm_test.py
+- [ ] pytest conventions followed (not unittest)
 - [ ] 41 ps1p tests pass, 47 disassembler tests pass — no regressions
 
-### Performance
+### PERFORMANCE
 - [ ] No O(n²) scanning of 429KB firmware
 - [ ] Opcode map builder caches results (not 4x redundant iteration — previous bug)
 - [ ] AIE2 config extractor filters control opcodes to valid range with dynamic region boundaries (previous bug)
+- [ ] SHA-256 / entropy computations efficient
 
-### Python Hygiene
+### PYTHON HYGIENE
 - [ ] Python 3.10+ (python_requires in setup.cfg)
 - [ ] No bare `except:` — catch specific exceptions
 - [ ] f-strings preferred over .format() or %
 - [ ] Type hints on public functions
 - [ ] No mutable default arguments
+- [ ] No wildcard imports
 
 ## Review Tone
-Flag issues with specific, actionable feedback. Say *what* is wrong, *why* it matters for firmware RE correctness, and *how* to fix it. Ignore whitespace nits. Mark buffer-overflow or untrusted-offset bugs as CRITICAL.
+Flag issues with specific, actionable feedback. Say *what* is wrong, *why* it matters for firmware RE correctness (reference the domain context above), and *how* to fix it. Ignore whitespace nits. Mark buffer-overflow or untrusted-offset bugs as CRITICAL.
 """
 
 [pr_code_suggestions]
